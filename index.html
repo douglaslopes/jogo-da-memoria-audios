@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Jogo da Memória dos Brothers</title>
+  <title>Jogo da Memória dos Brothers - Versão Aprimorada</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -11,6 +11,7 @@
       --primary-dark-color: #0056b3;
       --success-color: #28a745;
       --warning-color: #ffc107;
+      --danger-color: #dc3545;
       --background-color: #f0f2f5;
       --text-color: #333;
       --card-back-color: var(--primary-color);
@@ -36,7 +37,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      background: var(--background-color);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       margin: 0;
       padding: var(--spacing-large);
       display: flex;
@@ -46,21 +47,32 @@
       color: var(--text-color);
     }
 
+    .game-container {
+      background: white;
+      border-radius: 20px;
+      padding: var(--spacing-large);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 1200px;
+      width: 100%;
+    }
+
     h1 {
       font-size: var(--font-size-large);
       margin-bottom: var(--spacing-medium);
       text-align: center;
+      color: var(--primary-color);
     }
 
     h2 {
       font-size: calc(var(--font-size-large) - 4px);
       margin-bottom: var(--spacing-small);
+      color: var(--primary-dark-color);
     }
 
     .descricao {
       max-width: 500px;
       text-align: center;
-      margin-bottom: var(--spacing-medium);
+      margin: 0 auto var(--spacing-medium) auto;
       font-size: var(--font-size-medium);
     }
 
@@ -72,26 +84,64 @@
       gap: var(--spacing-small);
     }
 
+    .stats-container {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-large);
+      margin-bottom: var(--spacing-medium);
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      background: var(--background-color);
+      padding: var(--spacing-medium);
+      border-radius: 10px;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: var(--primary-color);
+      display: block;
+    }
+
     input, select {
       padding: var(--spacing-small);
       font-size: var(--font-size-medium);
       width: 200px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 8px;
+      transition: border-color 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
     }
 
     button {
-      padding: 8px 16px;
+      padding: 10px 20px;
       background-color: var(--primary-color);
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      font-weight: bold;
     }
 
     button:hover {
       background-color: var(--primary-dark-color);
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .tabuleiro {
@@ -115,7 +165,14 @@
       border-radius: 8px;
       user-select: none;
       padding: 4px;
-      transition: background-color 0.3s ease, transform 0.3s ease;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .carta:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     }
 
     .carta.revelada {
@@ -127,11 +184,15 @@
       background: var(--card-comparing-color);
     }
 
-    .cronometro {
-      font-weight: bold;
-      font-size: 1.2em;
-      margin-top: var(--spacing-small);
-      color: var(--primary-dark-color);
+    .carta.erro {
+      background: var(--danger-color);
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
     }
 
     .mensagem {
@@ -139,20 +200,38 @@
       font-weight: bold;
       text-align: center;
       color: var(--text-color);
+      padding: var(--spacing-medium);
+      border-radius: 8px;
+    }
+
+    .mensagem.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
     }
 
     .mensagem.error {
-      color: #dc3545; /* Vermelho para mensagens de erro */
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .ranking-container {
+      display: flex;
+      gap: var(--spacing-large);
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
     }
 
     .rankingLocal, .rankingGlobal {
       margin-top: var(--spacing-large);
-      width: 90%;
+      width: 100%;
       max-width: 350px;
-      background: white;
+      background: var(--background-color);
       padding: var(--spacing-medium);
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
     ol {
@@ -162,7 +241,43 @@
     ol li {
       margin-bottom: 4px;
       font-size: var(--font-size-medium);
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
     }
+
+    ol li:hover {
+      background-color: rgba(0,123,255,0.1);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background-color: #e9ecef;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: var(--spacing-medium) 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .difficulty-indicator {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+      margin-left: 5px;
+    }
+
+    .difficulty-facil { background-color: #d4edda; color: #155724; }
+    .difficulty-medio { background-color: #fff3cd; color: #856404; }
+    .difficulty-dificil { background-color: #f8d7da; color: #721c24; }
 
     @media (min-width: 600px) {
       .tabuleiro {
@@ -173,44 +288,79 @@
       .tabuleiro {
         grid-template-columns: repeat(4, var(--card-width));
       }
+      .stats-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .ranking-container {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>🧠 Jogo da Memória dos Brothers</h1>
-    <p class="descricao">
-      Conecte os países às capitais (ex: Brasil ↔ Brasília).<br />
-      Digite seu nome, escolha o nível e clique em "Iniciar Jogo".
-    </p>
-  </header>
+  <div class="game-container">
+    <header>
+      <h1>🧠 Jogo da Memória dos Brothers</h1>
+      <p class="descricao">
+        Conecte os países às capitais (ex: Brasil ↔ Brasília).<br />
+        Agora com 100 países diferentes a cada partida!
+      </p>
+    </header>
 
-  <main>
-    <div class="game-controls">
-      <input type="text" id="nome" placeholder="Seu nome" />
-      <select id="dificuldade">
-        <option value="facil">Fácil (6 pares)</option>
-        <option value="medio" selected>Médio (12 pares)</option>
-        <option value="dificil">Difícil (16 pares)</option>
-      </select>
-      <button id="btnIniciar">▶️ Iniciar Jogo</button>
-      <div class="cronometro">⏱ Tempo: <span id="cronometro">00:00</span></div>
-    </div>
+    <main>
+      <div class="game-controls">
+        <input type="text" id="nome" placeholder="Seu nome" />
+        <select id="dificuldade">
+          <option value="facil">Fácil (6 pares)</option>
+          <option value="medio" selected>Médio (12 pares)</option>
+          <option value="dificil">Difícil (16 pares)</option>
+          <option value="extremo">Extremo (24 pares)</option>
+        </select>
+        <button id="btnIniciar">▶️ Iniciar Jogo</button>
+      </div>
 
-    <div class="tabuleiro" id="tabuleiro"></div>
-    <div class="mensagem" id="mensagem"></div>
+      <div class="stats-container">
+        <div class="stat-item">
+          <span class="stat-value" id="cronometro">00:00</span>
+          <div>⏱ Tempo</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="tentativas">0</span>
+          <div>🎯 Tentativas</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="acertos">0</span>
+          <div>✅ Acertos</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="erros">0</span>
+          <div>❌ Erros</div>
+        </div>
+      </div>
 
-    <section class="rankingLocal">
-      <h2>🏆 Ranking Local (Top 5)</h2>
-      <ol id="rankingListaLocal"></ol>
-    </section>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
 
-    <section class="rankingGlobal">
-      <h2>🌐 Ranking Global (Sheets)</h2>
-      <ol id="rankingListaGlobal"></ol>
-    </section>
-  </main>
+      <div class="tabuleiro" id="tabuleiro"></div>
+      <div class="mensagem" id="mensagem"></div>
+
+      <div class="ranking-container">
+        <section class="rankingLocal">
+          <h2>🏆 Ranking Local (Top 5)</h2>
+          <ol id="rankingListaLocal"></ol>
+        </section>
+
+        <section class="rankingGlobal">
+          <h2>🌐 Ranking Global (Sheets)</h2>
+          <ol id="rankingListaGlobal"></ol>
+        </section>
+      </div>
+    </main>
+  </div>
 
 <audio id="trilha" src="https://douglaslopes.github.io/jogo-da-memoria-audios/lofi-study-calm-peaceful-chill-hop-112191.mp3" loop muted></audio>
 <audio id="somVirar" src="https://douglaslopes.github.io/jogo-da-memoria-audios/click-2-124467.mp3"></audio>
@@ -219,19 +369,58 @@
   <script>
     // --- Configurações ---
     const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbw0b4Ka7nlH328FDvq7TTagCqMtos3eAgd2LryX1jOyo7Y2_oQuxLvJQIueh4XMPA41/exec';
+    
+    // Base expandida com 100 países e capitais
     const PARES_CAPITAIS = [
       ["Brasil", "Brasília"], ["França", "Paris"], ["Japão", "Tóquio"],
       ["Estados Unidos", "Washington"], ["Canadá", "Ottawa"], ["Argentina", "Buenos Aires"],
       ["Alemanha", "Berlim"], ["Itália", "Roma"], ["Portugal", "Lisboa"],
       ["Reino Unido", "Londres"], ["Rússia", "Moscou"], ["Espanha", "Madri"],
       ["China", "Pequim"], ["Austrália", "Camberra"], ["México", "Cidade do México"],
-      ["Egito", "Cairo"]
+      ["Egito", "Cairo"], ["Índia", "Nova Déli"], ["Turquia", "Ancara"],
+      ["Grécia", "Atenas"], ["Holanda", "Amsterdã"], ["Bélgica", "Bruxelas"],
+      ["Suíça", "Berna"], ["Áustria", "Viena"], ["Suécia", "Estocolmo"],
+      ["Noruega", "Oslo"], ["Dinamarca", "Copenhague"], ["Finlândia", "Helsinque"],
+      ["Polônia", "Varsóvia"], ["República Tcheca", "Praga"], ["Hungria", "Budapeste"],
+      ["Romênia", "Bucareste"], ["Bulgária", "Sófia"], ["Croácia", "Zagreb"],
+      ["Sérvia", "Belgrado"], ["Ucrânia", "Kiev"], ["Coreia do Sul", "Seul"],
+      ["Coreia do Norte", "Pyongyang"], ["Tailândia", "Bangkok"], ["Vietnã", "Hanói"],
+      ["Singapura", "Singapura"], ["Malásia", "Kuala Lumpur"], ["Indonésia", "Jacarta"],
+      ["Filipinas", "Manila"], ["Myanmar", "Naypyidaw"], ["Bangladesh", "Dhaka"],
+      ["Paquistão", "Islamabad"], ["Afeganistão", "Cabul"], ["Irã", "Teerã"],
+      ["Iraque", "Bagdá"], ["Síria", "Damasco"], ["Líbano", "Beirute"],
+      ["Israel", "Jerusalém"], ["Jordânia", "Amã"], ["Arábia Saudita", "Riad"],
+      ["Emirados Árabes", "Abu Dhabi"], ["Kuwait", "Cidade do Kuwait"], ["Catar", "Doha"],
+      ["Bahrain", "Manama"], ["Omã", "Mascate"], ["Iêmen", "Sanaa"],
+      ["Etiópia", "Adis Abeba"], ["Quênia", "Nairóbi"], ["Tanzânia", "Dodoma"],
+      ["Uganda", "Kampala"], ["Ruanda", "Kigali"], ["Gana", "Acra"],
+      ["Nigéria", "Abuja"], ["Senegal", "Dacar"], ["Marrocos", "Rabat"],
+      ["Argélia", "Argel"], ["Tunísia", "Túnis"], ["Líbia", "Trípoli"],
+      ["Sudão", "Cartum"], ["África do Sul", "Cidade do Cabo"], ["Zimbábue", "Harare"],
+      ["Botsuana", "Gaborone"], ["Namíbia", "Windhoek"], ["Angola", "Luanda"],
+      ["Moçambique", "Maputo"], ["Madagascar", "Antananarivo"], ["Mauritânia", "Nouakchott"],
+      ["Mali", "Bamaco"], ["Burkina Faso", "Ouagadougou"], ["Costa do Marfim", "Yamoussoukro"],
+      ["Libéria", "Monróvia"], ["Serra Leoa", "Freetown"], ["Guiné", "Conacri"],
+      ["Chile", "Santiago"], ["Peru", "Lima"], ["Equador", "Quito"],
+      ["Colômbia", "Bogotá"], ["Venezuela", "Caracas"], ["Uruguai", "Montevidéu"],
+      ["Paraguai", "Assunção"], ["Bolívia", "La Paz"], ["Guiana", "Georgetown"],
+      ["Suriname", "Paramaribo"], ["Cuba", "Havana"], ["Jamaica", "Kingston"],
+      ["República Dominicana", "Santo Domingo"], ["Haiti", "Porto Príncipe"], ["Barbados", "Bridgetown"],
+      ["Trinidad e Tobago", "Porto de Espanha"], ["Costa Rica", "San José"], ["Panamá", "Cidade do Panamá"],
+      ["Guatemala", "Cidade da Guatemala"], ["Belize", "Belmopan"], ["Honduras", "Tegucigalpa"],
+      ["El Salvador", "San Salvador"], ["Nicarágua", "Manágua"], ["Islândia", "Reykjavik"],
+      ["Irlanda", "Dublin"], ["Nova Zelândia", "Wellington"], ["Papua Nova Guiné", "Port Moresby"],
+      ["Fiji", "Suva"], ["Tonga", "Nuku'alofa"]
     ];
 
     // --- Elementos do DOM ---
     const tabuleiroEl = document.getElementById('tabuleiro');
     const mensagemEl = document.getElementById('mensagem');
     const cronometroEl = document.getElementById('cronometro');
+    const tentativasEl = document.getElementById('tentativas');
+    const acertosEl = document.getElementById('acertos');
+    const errosEl = document.getElementById('erros');
+    const progressFillEl = document.getElementById('progressFill');
     const nomeInput = document.getElementById('nome');
     const dificuldadeSelect = document.getElementById('dificuldade');
     const btnIniciar = document.getElementById('btnIniciar');
@@ -241,10 +430,10 @@
     const somAcertar = document.getElementById('somAcertar');
     const trilhaSonora = document.getElementById('trilha');
 
-// Aumentar/diminuir volume dos áudios
-trilhaSonora.volume = 0.2; // Exemplo: 20% do volume máximo
-somVirar.volume = 0.5;    // Exemplo: 50% do volume máximo
-somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
+    // Configurar volumes dos áudios
+    trilhaSonora.volume = 0.2;
+    somVirar.volume = 0.5;
+    somAcertar.volume = 0.6;
     
     // --- Variáveis de Estado do Jogo ---
     let cartasNoJogo = [];
@@ -254,6 +443,10 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
     let cronometroIntervalId;
     let segundosDecorridos = 0;
     let nivelDificuldadeAtual = 'medio';
+    let tentativasRealizadas = 0;
+    let acertosConsecutivos = 0;
+    let errosTotal = 0;
+    let totalPares = 0;
 
     // --- Funções de Utilitário ---
     function formatarTempo(s) {
@@ -262,13 +455,23 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
       return `${minutos}:${segundos}`;
     }
 
+    function atualizarEstatisticas() {
+      cronometroEl.textContent = formatarTempo(segundosDecorridos);
+      tentativasEl.textContent = tentativasRealizadas;
+      acertosEl.textContent = paresEncontrados;
+      errosEl.textContent = errosTotal;
+      
+      // Atualizar barra de progresso
+      const progresso = (paresEncontrados / totalPares) * 100;
+      progressFillEl.style.width = `${progresso}%`;
+    }
+
     function iniciarCronometro() {
       clearInterval(cronometroIntervalId);
       segundosDecorridos = 0;
-      cronometroEl.textContent = '00:00';
       cronometroIntervalId = setInterval(() => {
         segundosDecorridos++;
-        cronometroEl.textContent = formatarTempo(segundosDecorridos);
+        atualizarEstatisticas();
       }, 1000);
     }
 
@@ -276,24 +479,31 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
       clearInterval(cronometroIntervalId);
     }
 
+    function obterParesPorNivel(nivel) {
+      switch(nivel) {
+        case 'facil': return 6;
+        case 'dificil': return 16;
+        case 'extremo': return 24;
+        default: return 12; // médio
+      }
+    }
+
     function embaralharCartas() {
       const nivel = dificuldadeSelect.value;
       nivelDificuldadeAtual = nivel;
-      let quantidadePares;
-      if (nivel === 'facil') {
-        quantidadePares = 6;
-      } else if (nivel === 'dificil') {
-        quantidadePares = 16;
-      } else {
-        quantidadePares = 12; // Médio
-      }
+      const quantidadePares = obterParesPorNivel(nivel);
+      totalPares = quantidadePares;
 
-      const paresSelecionados = PARES_CAPITAIS.slice(0, quantidadePares);
+      // Embaralhar os países disponíveis e selecionar uma quantidade aleatória
+      const paresEmbaralhados = [...PARES_CAPITAIS].sort(() => Math.random() - 0.5);
+      const paresSelecionados = paresEmbaralhados.slice(0, quantidadePares);
+      
       const cartasGeradas = [];
       paresSelecionados.forEach(([pais, capital]) => {
         cartasGeradas.push({ tipo: 'pais', valor: pais, idPar: pais });
         cartasGeradas.push({ tipo: 'capital', valor: capital, idPar: pais });
       });
+      
       return cartasGeradas.sort(() => Math.random() - 0.5);
     }
 
@@ -311,18 +521,39 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
       });
     }
 
+    function mostrarMensagem(texto, tipo = '') {
+      mensagemEl.innerText = texto;
+      mensagemEl.className = 'mensagem';
+      if (tipo) {
+        mensagemEl.classList.add(tipo);
+      }
+    }
+
+    function calcularPontuacao() {
+      const bonusVelocidade = Math.max(0, 300 - segundosDecorridos);
+      const bonusAcertos = acertosConsecutivos * 10;
+      const penalidades = errosTotal * 5;
+      const multiplicadorDificuldade = {
+        'facil': 1,
+        'medio': 1.5,
+        'dificil': 2,
+        'extremo': 3
+      }[nivelDificuldadeAtual];
+      
+      return Math.round((bonusVelocidade + bonusAcertos - penalidades) * multiplicadorDificuldade);
+    }
+
     // --- Lógica do Jogo ---
     function onCartaClick(event) {
       const cartaAtual = event.target;
 
-      // Impede cliques se estiver bloqueado, se a carta já estiver revelada ou se for a mesma carta virada
       if (bloqueioInteracao || cartaAtual.classList.contains('revelada') || cartaAtual === cartaViradaPrimeira) {
         return;
       }
 
       cartaAtual.innerText = cartaAtual.dataset.valor;
       cartaAtual.classList.add('comparando');
-      somVirar.currentTime = 0; // Reinicia o áudio para tocar a cada clique
+      somVirar.currentTime = 0;
       somVirar.play();
 
       if (!cartaViradaPrimeira) {
@@ -330,7 +561,9 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
         return;
       }
 
-      bloqueioInteracao = true; // Bloqueia novas interações enquanto compara
+      bloqueioInteracao = true;
+      tentativasRealizadas++;
+      
       const acertou = cartaAtual.dataset.idPar === cartaViradaPrimeira.dataset.idPar &&
                       cartaAtual.dataset.tipo !== cartaViradaPrimeira.dataset.tipo;
 
@@ -341,24 +574,36 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
           cartaViradaPrimeira = null;
           bloqueioInteracao = false;
           paresEncontrados++;
+          acertosConsecutivos++;
           somAcertar.currentTime = 0;
           somAcertar.play();
+          
+          atualizarEstatisticas();
 
-          if (paresEncontrados === Math.floor(cartasNoJogo.length / 2)) {
+          if (paresEncontrados === totalPares) {
             pararCronometro();
-            mensagemEl.innerText = `🎉 Zerou no nível "${nivelDificuldadeAtual}" em ${formatarTempo(segundosDecorridos)}!`;
-            salvarTempoJogo();
+            const pontuacao = calcularPontuacao();
+            mostrarMensagem(`🎉 Parabéns! Zerou o nível "${nivelDificuldadeAtual}" em ${formatarTempo(segundosDecorridos)}! Pontuação: ${pontuacao}`, 'success');
+            salvarTempoJogo(pontuacao);
           }
-        }, 300); // Pequeno atraso para o usuário ver o par
+        }, 300);
       } else {
         setTimeout(() => {
-          cartaAtual.innerText = '';
-          cartaViradaPrimeira.innerText = '';
-          cartaAtual.classList.remove('comparando');
-          cartaViradaPrimeira.classList.remove('comparando');
-          cartaViradaPrimeira = null;
-          bloqueioInteracao = false;
-        }, 1000); // Tempo para o usuário ver as cartas erradas antes de virarem de volta
+          cartaAtual.classList.add('erro');
+          cartaViradaPrimeira.classList.add('erro');
+          
+          setTimeout(() => {
+            cartaAtual.innerText = '';
+            cartaViradaPrimeira.innerText = '';
+            cartaAtual.classList.remove('comparando', 'erro');
+            cartaViradaPrimeira.classList.remove('comparando', 'erro');
+            cartaViradaPrimeira = null;
+            bloqueioInteracao = false;
+            errosTotal++;
+            acertosConsecutivos = 0;
+            atualizarEstatisticas();
+          }, 500);
+        }, 1000);
       }
     }
 
@@ -370,72 +615,94 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
         return;
       }
 
+      // Resetar todas as variáveis
       cartaViradaPrimeira = null;
       bloqueioInteracao = false;
       paresEncontrados = 0;
+      tentativasRealizadas = 0;
+      acertosConsecutivos = 0;
+      errosTotal = 0;
       mensagemEl.innerText = '';
-      mensagemEl.classList.remove('error'); // Remove classe de erro se houver
+      mensagemEl.className = 'mensagem';
       
       criarTabuleiro();
+      atualizarEstatisticas();
       iniciarCronometro();
 
-      // Tenta reproduzir a trilha sonora e desmutar se conseguir
+      // Tentar reproduzir trilha sonora
       trilhaSonora.muted = false;
       trilhaSonora.play().catch(error => {
-        console.warn("Autoplay da trilha sonora bloqueado ou erro na reprodução:", error);
-        // Opcional: mostrar uma mensagem para o usuário clicar para habilitar o som
+        console.warn("Autoplay da trilha sonora bloqueado:", error);
       });
     }
 
     // --- Funções de Ranking ---
-    function salvarTempoJogo() {
+    function salvarTempoJogo(pontuacao = 0) {
       const nomeJogador = nomeInput.value.trim();
       const rankingLocal = JSON.parse(localStorage.getItem('rankingBrothers')) || [];
 
-      rankingLocal.push({
+      const novoResultado = {
         nome: nomeJogador,
         nivel: nivelDificuldadeAtual,
         tempo: segundosDecorridos,
-        tempoFormatado: formatarTempo(segundosDecorridos) // Salva também o tempo formatado
-      });
-      rankingLocal.sort((a, b) => a.tempo - b.tempo); // Ordena pelo tempo
+        tempoFormatado: formatarTempo(segundosDecorridos),
+        pontuacao: pontuacao,
+        tentativas: tentativasRealizadas,
+        erros: errosTotal,
+        data: new Date().toLocaleDateString()
+      };
+
+      rankingLocal.push(novoResultado);
       
-      // Limita o ranking local aos top 5
+      // Ordenar por pontuação (maior primeiro), depois por tempo (menor primeiro)
+      rankingLocal.sort((a, b) => {
+        if (b.pontuacao !== a.pontuacao) {
+          return b.pontuacao - a.pontuacao;
+        }
+        return a.tempo - b.tempo;
+      });
+      
       if (rankingLocal.length > 5) {
         rankingLocal.length = 5;
       }
+      
       localStorage.setItem('rankingBrothers', JSON.stringify(rankingLocal));
       exibirRankingLocal();
 
-      // Envia para o ranking global (Google Sheets)
+      // Enviar para ranking global
       const formData = new FormData();
       formData.append('nome', nomeJogador);
       formData.append('nivel', nivelDificuldadeAtual);
-      formData.append('tempo', formatarTempo(segundosDecorridos)); // Envia tempo formatado
+      formData.append('tempo', formatarTempo(segundosDecorridos));
+      formData.append('pontuacao', pontuacao);
 
       fetch(URL_SCRIPT, {
         method: 'POST',
-        mode: 'no-cors', // Necessário para evitar CORS com Google Apps Script
+        mode: 'no-cors',
         body: formData
       }).then(() => {
-        // Sucesso no envio (mesmo com no-cors, não podemos verificar a resposta)
-        exibirRankingGlobal(); // Atualiza o ranking global após o envio
+        exibirRankingGlobal();
       }).catch(error => {
-        console.error("Erro ao enviar dados para o ranking global:", error);
-        mensagemEl.innerText = 'Erro ao enviar seu resultado para o ranking global.';
-        mensagemEl.classList.add('error');
+        console.error("Erro ao enviar dados:", error);
+        mostrarMensagem('Erro ao enviar resultado para o ranking global.', 'error');
       });
     }
 
     function exibirRankingLocal() {
       const rankingLocal = JSON.parse(localStorage.getItem('rankingBrothers')) || [];
       rankingListaLocal.innerHTML = '';
+      
       if (rankingLocal.length === 0) {
         rankingListaLocal.innerHTML = '<li>Nenhum resultado ainda.</li>';
       } else {
-        rankingLocal.forEach(item => {
+        rankingLocal.forEach((item, index) => {
           const li = document.createElement('li');
-          li.textContent = `${item.nome} (${item.nivel}) - ${item.tempoFormatado}`;
+          const dificuldadeClass = `difficulty-${item.nivel}`;
+          li.innerHTML = `
+            ${item.nome} 
+            <span class="difficulty-indicator ${dificuldadeClass}">${item.nivel}</span><br>
+            ⏱ ${item.tempoFormatado} | 🎯 ${item.pontuacao}pts
+          `;
           rankingListaLocal.appendChild(li);
         });
       }
@@ -444,54 +711,41 @@ somAcertar.volume = 0.6;  // Exemplo: 60% do volume máximo
     function exibirRankingGlobal() {
       fetch(URL_SCRIPT)
         .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           return res.json();
         })
         .then(data => {
-          rankingListaGlobal.innerHTML = '';
-          if (!data || data.length === 0) {
-            rankingListaGlobal.innerHTML = '<li>Nenhum resultado global ainda.</li>';
-            return;
-          }
-          data
-            .sort((a, b) => {
-              // Converte tempo "MM:SS" para segundos para ordenação correta
-              const [minA, secA] = a.tempo.split(':').map(Number);
-              const [minB, secB] = b.tempo.split(':').map(Number);
-              const tempoEmSegundosA = minA * 60 + secA;
-              const tempoEmSegundosB = minB * 60 + secB;
-              return tempoEmSegundosA - tempoEmSegundosB;
-            })
-            .slice(0, 5) // Exibe apenas o top 5
-            .forEach(item => {
-              const li = document.createElement('li');
-              li.textContent = `${item.nome} (${item.nivel}) - ${item.tempo}`;
-              rankingListaGlobal.appendChild(li);
-            });
-          mensagemEl.classList.remove('error'); // Remove classe de erro se a busca for bem-sucedida
-        })
-        .catch(error => {
-          console.error("Erro ao buscar ranking global:", error);
-          rankingListaGlobal.innerHTML = '<li>Erro ao carregar ranking global.</li>';
-          mensagemEl.innerText = 'Erro ao buscar ranking global.';
-          mensagemEl.classList.add('error');
+          rankingListaGlobal.innerHTML = ''; // Limpa a lista antes de preencher
+
+      if (data.length === 0) {
+        rankingListaGlobal.innerHTML = '<li>Nenhum resultado global ainda.</li>';
+      } else {
+        // Ordenar os dados recebidos pelo tempo (ou sua lógica de pontuação)
+        // Se a API já retorna ordenado, esta etapa pode ser opcional.
+        // Assumindo que a API retorna em ordem crescente de tempo.
+        data.forEach((item, index) => {
+          const li = document.createElement('li');
+          // Adiciona classes de dificuldade se a API retornar o nível
+          const dificuldadeClass = `difficulty-${item.nivel || 'medio'}`; // 'medio' como fallback
+          
+          // Ajuste aqui se o formato do tempo ainda estiver com problemas APÓS a correção do Apps Script
+          // Idealmente, o Apps Script já enviará no formato MM:SS
+          // item.tempo é o que vem do Sheets. Se ainda vier como data, você pode tentar formatar aqui
+          // const tempoExibido = typeof item.tempo === 'string' ? item.tempo : formatarTempo(item.tempo);
+          // Mas o ideal é que o Apps Script resolva.
+          
+          li.innerHTML = `
+            ${item.nome} 
+            <span class="difficulty-indicator ${dificuldadeClass}">${item.nivel}</span><br>
+            ⏱ ${item.tempo} | 🎯 ${item.pontuacao}pts
+          `;
+          rankingListaGlobal.appendChild(li);
         });
-    }
-
-    // --- Event Listeners ---
-    btnIniciar.addEventListener('click', reiniciarJogo);
-
-    // --- Inicialização da Página ---
-    document.addEventListener('DOMContentLoaded', () => {
-      exibirRankingLocal();
-      exibirRankingGlobal();
-      criarTabuleiro(); // Cria um tabuleiro inicial ao carregar a página
-      // A trilha sonora não será automaticamente iniciada aqui devido a restrições do navegador.
-      // Ela será tentada ao clicar em "Iniciar Jogo".
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao carregar ranking global:", error);
+      rankingListaGlobal.innerHTML = '<li>Erro ao carregar ranking global.</li>';
+      mostrarMensagem('Erro ao carregar ranking global.', 'error');
     });
-  </script>
-
-</body>
-</html>
+}
