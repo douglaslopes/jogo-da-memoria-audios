@@ -715,37 +715,82 @@
           return res.json();
         })
         .then(data => {
-          rankingListaGlobal.innerHTML = ''; // Limpa a lista antes de preencher
-
-      if (data.length === 0) {
-        rankingListaGlobal.innerHTML = '<li>Nenhum resultado global ainda.</li>';
-      } else {
-        // Ordenar os dados recebidos pelo tempo (ou sua lógica de pontuação)
-        // Se a API já retorna ordenado, esta etapa pode ser opcional.
-        // Assumindo que a API retorna em ordem crescente de tempo.
-        data.forEach((item, index) => {
-          const li = document.createElement('li');
-          // Adiciona classes de dificuldade se a API retornar o nível
-          const dificuldadeClass = `difficulty-${item.nivel || 'medio'}`; // 'medio' como fallback
+          rankingListaGlobal.innerHTML = '';
+          if (!data || data.length === 0) {
+            rankingListaGlobal.innerHTML = '<li>Nenhum resultado global ainda.</li>';
+            return;
+          }
           
-          // Ajuste aqui se o formato do tempo ainda estiver com problemas APÓS a correção do Apps Script
-          // Idealmente, o Apps Script já enviará no formato MM:SS
-          // item.tempo é o que vem do Sheets. Se ainda vier como data, você pode tentar formatar aqui
-          // const tempoExibido = typeof item.tempo === 'string' ? item.tempo : formatarTempo(item.tempo);
-          // Mas o ideal é que o Apps Script resolva.
-          
-          li.innerHTML = `
-            ${item.nome} 
-            <span class="difficulty-indicator ${dificuldadeClass}">${item.nivel}</span><br>
-            ⏱ ${item.tempo} | 🎯 ${item.pontuacao}pts
-          `;
-          rankingListaGlobal.appendChild(li);
+          data
+            .sort((a, b) => {
+              // Ordenar por pontuação primeiro, depois por tempo
+              if (b.pontuacao !== a.pontuacao) {
+                return (b.pontuacao || 0) - (a.pontuacao || 0);
+              }
+              const [minA, secA] = a.tempo.split(':').map(Number);
+              const [minB, secB] = b.tempo.split(':').map(Number);
+              const tempoEmSegundosA = minA * 60 + secA;
+              const tempoEmSegundosB = minB * 60 + secB;
+              return tempoEmSegundosA - tempoEmSegundosB;
+            })
+            .slice(0, 5)
+            .forEach((item, index) => {
+              const li = document.createElement('li');
+              const dificuldadeClass = `difficulty-${item.nivel}`;
+              li.innerHTML = `
+                ${item.nome} 
+                <span class="difficulty-indicator ${dificuldadeClass}">${item.nivel}</span><br>
+                ⏱ ${item.tempo} | 🎯 ${item.pontuacao || 0}pts
+              `;
+              rankingListaGlobal.appendChild(li);
+            });
+        })
+        .catch(error => {
+          console.error("Erro ao buscar ranking global:", error);
+          rankingListaGlobal.innerHTML = '<li>Erro ao carregar ranking global.</li>';
+          mostrarMensagem('Erro ao buscar ranking global.', 'error');
         });
+    }
+
+    // --- Event Listeners ---
+    btnIniciar.addEventListener('click', reiniciarJogo);
+
+    // Adicionar teclas de atalho
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !bloqueioInteracao) {
+        if (nomeInput.value.trim()) {
+          reiniciarJogo();
+        } else {
+          nomeInput.focus();
+        }
       }
-    })
-    .catch(error => {
-      console.error("Erro ao carregar ranking global:", error);
-      rankingListaGlobal.innerHTML = '<li>Erro ao carregar ranking global.</li>';
-      mostrarMensagem('Erro ao carregar ranking global.', 'error');
+      if (e.key === 'Escape') {
+        // Pausar/despausar trilha sonora
+        if (trilhaSonora.paused) {
+          trilhaSonora.play();
+        } else {
+          trilhaSonora.pause();
+        }
+      }
     });
-}
+
+    // --- Inicialização da Página ---
+    document.addEventListener('DOMContentLoaded', () => {
+      exibirRankingLocal();
+      exibirRankingGlobal();
+      criarTabuleiro();
+      atualizarEstatisticas();
+      
+      // Focar no input de nome
+      nomeInput.focus();
+      
+      // Adicionar dica de teclas de atalho
+      const dica = document.createElement('div');
+      dica.style.cssText = 'text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;';
+      dica.innerHTML = '💡 Dicas: <kbd>Enter</kbd> para iniciar | <kbd>Esc</kbd> para pausar música';
+      document.querySelector('.game-container').appendChild(dica);
+    });
+  </script>
+
+</body>
+</html>
