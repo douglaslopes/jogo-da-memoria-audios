@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jogo da Memória dos Brothers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      /* Cores */
+      --primary-color: #007bff;
+      --primary-dark-color: #0056b3;
+      --success-color: #28a745;
+      --warning-color: #ffc107;
+      --background-color: #f0f2f5;
+      --text-color: #333;
+      --card-back-color: var(--primary-color);
+      --card-revealed-color: var(--success-color);
+      --card-comparing-color: var(--warning-color);
+
+      /* Espaçamento */
+      --spacing-small: 6px;
+      --spacing-medium: 10px;
+      --spacing-large: 20px;
+
+      /* Tamanhos */
+      --card-width: 80px;
+      --card-height: 70px;
+      --font-size-small: 13px;
+      --font-size-medium: 14px;
+      --font-size-large: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--background-color);
+      margin: 0;
+      padding: var(--spacing-large);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--text-color);
+    }
+
+    h1 {
+      font-size: var(--font-size-large);
+      margin-bottom: var(--spacing-medium);
+      text-align: center;
+    }
+
+    h2 {
+      font-size: calc(var(--font-size-large) - 4px);
+      margin-bottom: var(--spacing-small);
+    }
+
+    .descricao {
+      max-width: 500px;
+      text-align: center;
+      margin-bottom: var(--spacing-medium);
+      font-size: var(--font-size-medium);
+    }
+
+    .game-controls {
+      margin-bottom: var(--spacing-medium);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-small);
+    }
+
+    input, select {
+      padding: var(--spacing-small);
+      font-size: var(--font-size-medium);
+      width: 200px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark-color);
+    }
+
+    .tabuleiro {
+      display: grid;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: var(--spacing-medium);
+    }
+
+    .carta {
+      width: var(--card-width);
+      height: var(--card-height);
+      background: var(--card-back-color);
+      color: white;
+      font-size: var(--font-size-small);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 8px;
+      user-select: none;
+      padding: 4px;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .carta.revelada {
+      background: var(--card-revealed-color);
+      cursor: default;
+    }
+
+    .carta.comparando {
+      background: var(--card-comparing-color);
+    }
+
+    .cronometro {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-top: var(--spacing-small);
+      color: var(--primary-dark-color);
+    }
+
+    .mensagem {
+      margin-top: var(--spacing-medium);
+      font-weight: bold;
+      text-align: center;
+      color: var(--text-color);
+    }
+
+    .mensagem.error {
+      color: #dc3545; /* Vermelho para mensagens de erro */
+    }
+
+    .rankingLocal, .rankingGlobal {
+      margin-top: var(--spacing-large);
+      width: 90%;
+      max-width: 350px;
+      background: white;
+      padding: var(--spacing-medium);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    ol {
+      padding-left: 20px;
+    }
+
+    ol li {
+      margin-bottom: 4px;
+      font-size: var(--font-size-medium);
+    }
+
+    @media (min-width: 600px) {
+      .tabuleiro {
+        grid-template-columns: repeat(8, var(--card-width));
+      }
+    }
+    @media (max-width: 599px) {
+      .tabuleiro {
+        grid-template-columns: repeat(4, var(--card-width));
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🧠 Jogo da Memória dos Brothers</h1>
+    <p class="descricao">
+      Conecte os países às capitais (ex: Brasil ↔ Brasília).<br />
+      Digite seu nome, escolha o nível e clique em "Iniciar Jogo".
+    </p>
+  </header>
+
+  <main>
+    <div class="game-controls">
+      <input type="text" id="nome" placeholder="Seu nome" />
+      <select id="dificuldade">
+        <option value="facil">Fácil (6 pares)</option>
+        <option value="medio" selected>Médio (12 pares)</option>
+        <option value="dificil">Difícil (16 pares)</option>
+      </select>
+      <button id="btnIniciar">▶️ Iniciar Jogo</button>
+      <div class="cronometro">⏱ Tempo: <span id="cronometro">00:00</span></div>
+    </div>
+
+    <div class="tabuleiro" id="tabuleiro"></div>
+    <div class="mensagem" id="mensagem"></div>
+
+    <section class="rankingLocal">
+      <h2>🏆 Ranking Local (Top 5)</h2>
+      <ol id="rankingListaLocal"></ol>
+    </section>
+
+    <section class="rankingGlobal">
+      <h2>🌐 Ranking Global (Sheets)</h2>
+      <ol id="rankingListaGlobal"></ol>
+    </section>
+  </main>
+
+<audio id="trilha" src="https://douglaslopes.github.io/jogo-da-memoria-audios/lofi-study-calm-peaceful-chill-hop-112191.mp3" loop muted></audio>
+<audio id="somVirar" src="https://douglaslopes.github.io/jogo-da-memoria-audios/click-2-124467.mp3"></audio>
+<audio id="somAcertar" src="https://douglaslopes.github.io/jogo-da-memoria-audios/success-1-6297.mp3"></audio>
+
+  <script>
+    // --- Configurações ---
+    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbw0b4Ka7nlH328FDvq7TTagCqMtos3eAgd2LryX1jOyo7Y2_oQuxLvJQIueh4XMPA41/exec';
+    const PARES_CAPITAIS = [
+      ["Brasil", "Brasília"], ["França", "Paris"], ["Japão", "Tóquio"],
+      ["Estados Unidos", "Washington"], ["Canadá", "Ottawa"], ["Argentina", "Buenos Aires"],
+      ["Alemanha", "Berlim"], ["Itália", "Roma"], ["Portugal", "Lisboa"],
+      ["Reino Unido", "Londres"], ["Rússia", "Moscou"], ["Espanha", "Madri"],
+      ["China", "Pequim"], ["Austrália", "Camberra"], ["México", "Cidade do México"],
+      ["Egito", "Cairo"]
+    ];
+
+    // --- Elementos do DOM ---
+    const tabuleiroEl = document.getElementById('tabuleiro');
+    const mensagemEl = document.getElementById('mensagem');
+    const cronometroEl = document.getElementById('cronometro');
+    const nomeInput = document.getElementById('nome');
+    const dificuldadeSelect = document.getElementById('dificuldade');
+    const btnIniciar = document.getElementById('btnIniciar');
+    const rankingListaLocal = document.getElementById('rankingListaLocal');
+    const rankingListaGlobal = document.getElementById('rankingListaGlobal');
+    const somVirar = document.getElementById('somVirar');
+    const somAcertar = document.getElementById('somAcertar');
+    const trilhaSonora = document.getElementById('trilha');
+
+    // --- Variáveis de Estado do Jogo ---
+    let cartasNoJogo = [];
+    let cartaViradaPrimeira = null;
+    let bloqueioInteracao = false;
+    let paresEncontrados = 0;
+    let cronometroIntervalId;
+    let segundosDecorridos = 0;
+    let nivelDificuldadeAtual = 'medio';
+
+    // --- Funções de Utilitário ---
+    function formatarTempo(s) {
+      const minutos = String(Math.floor(s / 60)).padStart(2, '0');
+      const segundos = String(s % 60).padStart(2, '0');
+      return `${minutos}:${segundos}`;
+    }
+
+    function iniciarCronometro() {
+      clearInterval(cronometroIntervalId);
+      segundosDecorridos = 0;
+      cronometroEl.textContent = '00:00';
+      cronometroIntervalId = setInterval(() => {
+        segundosDecorridos++;
+        cronometroEl.textContent = formatarTempo(segundosDecorridos);
+      }, 1000);
+    }
+
+    function pararCronometro() {
+      clearInterval(cronometroIntervalId);
+    }
+
+    function embaralharCartas() {
+      const nivel = dificuldadeSelect.value;
+      nivelDificuldadeAtual = nivel;
+      let quantidadePares;
+      if (nivel === 'facil') {
+        quantidadePares = 6;
+      } else if (nivel === 'dificil') {
+        quantidadePares = 16;
+      } else {
+        quantidadePares = 12; // Médio
+      }
+
+      const paresSelecionados = PARES_CAPITAIS.slice(0, quantidadePares);
+      const cartasGeradas = [];
+      paresSelecionados.forEach(([pais, capital]) => {
+        cartasGeradas.push({ tipo: 'pais', valor: pais, idPar: pais });
+        cartasGeradas.push({ tipo: 'capital', valor: capital, idPar: pais });
+      });
+      return cartasGeradas.sort(() => Math.random() - 0.5);
+    }
+
+    function criarTabuleiro() {
+      tabuleiroEl.innerHTML = '';
+      cartasNoJogo = embaralharCartas();
+      cartasNoJogo.forEach((cartaDados) => {
+        const cartaElement = document.createElement('div');
+        cartaElement.className = 'carta';
+        cartaElement.dataset.tipo = cartaDados.tipo;
+        cartaElement.dataset.valor = cartaDados.valor;
+        cartaElement.dataset.idPar = cartaDados.idPar;
+        cartaElement.addEventListener('click', onCartaClick);
+        tabuleiroEl.appendChild(cartaElement);
+      });
+    }
+
+    // --- Lógica do Jogo ---
+    function onCartaClick(event) {
+      const cartaAtual = event.target;
+
+      // Impede cliques se estiver bloqueado, se a carta já estiver revelada ou se for a mesma carta virada
+      if (bloqueioInteracao || cartaAtual.classList.contains('revelada') || cartaAtual === cartaViradaPrimeira) {
+        return;
+      }
+
+      cartaAtual.innerText = cartaAtual.dataset.valor;
+      cartaAtual.classList.add('comparando');
+      somVirar.currentTime = 0; // Reinicia o áudio para tocar a cada clique
+      somVirar.play();
+
+      if (!cartaViradaPrimeira) {
+        cartaViradaPrimeira = cartaAtual;
+        return;
+      }
+
+      bloqueioInteracao = true; // Bloqueia novas interações enquanto compara
+      const acertou = cartaAtual.dataset.idPar === cartaViradaPrimeira.dataset.idPar &&
+                      cartaAtual.dataset.tipo !== cartaViradaPrimeira.dataset.tipo;
+
+      if (acertou) {
+        setTimeout(() => {
+          cartaAtual.classList.replace('comparando', 'revelada');
+          cartaViradaPrimeira.classList.replace('comparando', 'revelada');
+          cartaViradaPrimeira = null;
+          bloqueioInteracao = false;
+          paresEncontrados++;
+          somAcertar.currentTime = 0;
+          somAcertar.play();
+
+          if (paresEncontrados === Math.floor(cartasNoJogo.length / 2)) {
+            pararCronometro();
+            mensagemEl.innerText = `🎉 Zerou no nível "${nivelDificuldadeAtual}" em ${formatarTempo(segundosDecorridos)}!`;
+            salvarTempoJogo();
+          }
+        }, 300); // Pequeno atraso para o usuário ver o par
+      } else {
+        setTimeout(() => {
+          cartaAtual.innerText = '';
+          cartaViradaPrimeira.innerText = '';
+          cartaAtual.classList.remove('comparando');
+          cartaViradaPrimeira.classList.remove('comparando');
+          cartaViradaPrimeira = null;
+          bloqueioInteracao = false;
+        }, 1000); // Tempo para o usuário ver as cartas erradas antes de virarem de volta
+      }
+    }
+
+    function reiniciarJogo() {
+      const nomeJogador = nomeInput.value.trim();
+      if (!nomeJogador) {
+        alert('Por favor, digite seu nome antes de começar!');
+        nomeInput.focus();
+        return;
+      }
+
+      cartaViradaPrimeira = null;
+      bloqueioInteracao = false;
+      paresEncontrados = 0;
+      mensagemEl.innerText = '';
+      mensagemEl.classList.remove('error'); // Remove classe de erro se houver
+      
+      criarTabuleiro();
+      iniciarCronometro();
+
+      // Tenta reproduzir a trilha sonora e desmutar se conseguir
+      trilhaSonora.muted = false;
+      trilhaSonora.play().catch(error => {
+        console.warn("Autoplay da trilha sonora bloqueado ou erro na reprodução:", error);
+        // Opcional: mostrar uma mensagem para o usuário clicar para habilitar o som
+      });
+    }
+
+    // --- Funções de Ranking ---
+    function salvarTempoJogo() {
+      const nomeJogador = nomeInput.value.trim();
+      const rankingLocal = JSON.parse(localStorage.getItem('rankingBrothers')) || [];
+
+      rankingLocal.push({
+        nome: nomeJogador,
+        nivel: nivelDificuldadeAtual,
+        tempo: segundosDecorridos,
+        tempoFormatado: formatarTempo(segundosDecorridos) // Salva também o tempo formatado
+      });
+      rankingLocal.sort((a, b) => a.tempo - b.tempo); // Ordena pelo tempo
+      
+      // Limita o ranking local aos top 5
+      if (rankingLocal.length > 5) {
+        rankingLocal.length = 5;
+      }
+      localStorage.setItem('rankingBrothers', JSON.stringify(rankingLocal));
+      exibirRankingLocal();
+
+      // Envia para o ranking global (Google Sheets)
+      const formData = new FormData();
+      formData.append('nome', nomeJogador);
+      formData.append('nivel', nivelDificuldadeAtual);
+      formData.append('tempo', formatarTempo(segundosDecorridos)); // Envia tempo formatado
+
+      fetch(URL_SCRIPT, {
+        method: 'POST',
+        mode: 'no-cors', // Necessário para evitar CORS com Google Apps Script
+        body: formData
+      }).then(() => {
+        // Sucesso no envio (mesmo com no-cors, não podemos verificar a resposta)
+        exibirRankingGlobal(); // Atualiza o ranking global após o envio
+      }).catch(error => {
+        console.error("Erro ao enviar dados para o ranking global:", error);
+        mensagemEl.innerText = 'Erro ao enviar seu resultado para o ranking global.';
+        mensagemEl.classList.add('error');
+      });
+    }
+
+    function exibirRankingLocal() {
+      const rankingLocal = JSON.parse(localStorage.getItem('rankingBrothers')) || [];
+      rankingListaLocal.innerHTML = '';
+      if (rankingLocal.length === 0) {
+        rankingListaLocal.innerHTML = '<li>Nenhum resultado ainda.</li>';
+      } else {
+        rankingLocal.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `${item.nome} (${item.nivel}) - ${item.tempoFormatado}`;
+          rankingListaLocal.appendChild(li);
+        });
+      }
+    }
+
+    function exibirRankingGlobal() {
+      fetch(URL_SCRIPT)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          rankingListaGlobal.innerHTML = '';
+          if (!data || data.length === 0) {
+            rankingListaGlobal.innerHTML = '<li>Nenhum resultado global ainda.</li>';
+            return;
+          }
+          data
+            .sort((a, b) => {
+              // Converte tempo "MM:SS" para segundos para ordenação correta
+              const [minA, secA] = a.tempo.split(':').map(Number);
+              const [minB, secB] = b.tempo.split(':').map(Number);
+              const tempoEmSegundosA = minA * 60 + secA;
+              const tempoEmSegundosB = minB * 60 + secB;
+              return tempoEmSegundosA - tempoEmSegundosB;
+            })
+            .slice(0, 5) // Exibe apenas o top 5
+            .forEach(item => {
+              const li = document.createElement('li');
+              li.textContent = `${item.nome} (${item.nivel}) - ${item.tempo}`;
+              rankingListaGlobal.appendChild(li);
+            });
+          mensagemEl.classList.remove('error'); // Remove classe de erro se a busca for bem-sucedida
+        })
+        .catch(error => {
+          console.error("Erro ao buscar ranking global:", error);
+          rankingListaGlobal.innerHTML = '<li>Erro ao carregar ranking global.</li>';
+          mensagemEl.innerText = 'Erro ao buscar ranking global.';
+          mensagemEl.classList.add('error');
+        });
+    }
+
+    // --- Event Listeners ---
+    btnIniciar.addEventListener('click', reiniciarJogo);
+
+    // --- Inicialização da Página ---
+    document.addEventListener('DOMContentLoaded', () => {
+      exibirRankingLocal();
+      exibirRankingGlobal();
+      criarTabuleiro(); // Cria um tabuleiro inicial ao carregar a página
+      // A trilha sonora não será automaticamente iniciada aqui devido a restrições do navegador.
+      // Ela será tentada ao clicar em "Iniciar Jogo".
+    });
+  </script>
+
+</body>
+</html>
