@@ -608,33 +608,56 @@
     }
 
     function reiniciarJogo() {
-      const nomeJogador = nomeInput.value.trim();
-      if (!nomeJogador) {
-        alert('Por favor, digite seu nome antes de começar!');
-        nomeInput.focus();
-        return;
-      }
+  const nomeJogador = nomeInput.value.trim();
+  if (!nomeJogador) {
+    alert('Por favor, digite seu nome antes de começar!');
+    nomeInput.focus();
+    return;
+  }
 
-      // Resetar todas as variáveis
-      cartaViradaPrimeira = null;
-      bloqueioInteracao = false;
-      paresEncontrados = 0;
-      tentativasRealizadas = 0;
-      acertosConsecutivos = 0;
-      errosTotal = 0;
-      mensagemEl.innerText = '';
-      mensagemEl.className = 'mensagem';
-      
-      criarTabuleiro();
-      atualizarEstatisticas();
-      iniciarCronometro();
+  // Resetar todas as variáveis
+  cartaViradaPrimeira = null;
+  bloqueioInteracao = true; // impedir clique durante memorização
+  paresEncontrados = 0;
+  tentativasRealizadas = 0;
+  acertosConsecutivos = 0;
+  errosTotal = 0;
+  mensagemEl.innerText = '';
+  mensagemEl.className = 'mensagem';
 
-      // Tentar reproduzir trilha sonora
-      trilhaSonora.muted = false;
-      trilhaSonora.play().catch(error => {
-        console.warn("Autoplay da trilha sonora bloqueado:", error);
-      });
-    }
+  criarTabuleiro();
+  atualizarEstatisticas();
+
+  // Revelar cartas temporariamente com base na dificuldade
+  const cartas = document.querySelectorAll('.carta');
+  cartas.forEach(carta => {
+    carta.innerText = carta.dataset.valor;
+    carta.classList.add('revelada');
+  });
+
+  const tempoMemorizacao = {
+    facil: 2000,
+    medio: 3000,
+    dificil: 4000,
+    extremo: 5000
+  }[dificuldadeSelect.value] || 3000;
+
+  setTimeout(() => {
+    cartas.forEach(carta => {
+      carta.innerText = '';
+      carta.classList.remove('revelada');
+    });
+
+    iniciarCronometro();
+    bloqueioInteracao = false;
+
+    // Tentar reproduzir trilha sonora
+    trilhaSonora.muted = false;
+    trilhaSonora.play().catch(error => {
+      console.warn("Autoplay da trilha sonora bloqueado:", error);
+    });
+  }, tempoMemorizacao);
+}
 
     // --- Funções de Ranking ---
     function salvarTempoJogo(pontuacao = 0) {
